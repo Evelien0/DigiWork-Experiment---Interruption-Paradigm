@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inbox — Calendar request</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#202124;background:#f5f7fa}.shell{max-width:800px;margin:22px auto;padding:0 16px}.card{background:white;border:1px solid #dfe3e8;border-radius:12px;padding:22px;margin-bottom:16px;box-shadow:0 2px 8px #0000000d}.meta{font-size:13px;color:#52606d}.subject{margin:8px 0 14px;font-size:22px}.calendar{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}.calendar th,.calendar td{border:1px solid #e1e5ea;text-align:center;padding:11px 2px}.calendar th{background:#edf2f7}.calendar td.busy{background:#f9d7d7;font-weight:bold;color:#8d2626}.calendar td.free{background:#e6f4ea;color:#276642}.scroll{overflow-x:auto}.calendar{min-width:560px}.buttons{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:8px;background:#125ad1;color:white;padding:12px 21px;font-weight:bold;cursor:pointer}button.secondary{background:#434e61}button:disabled{opacity:.55;cursor:not-allowed}#status{margin-top:12px;color:#52606d;font-size:13px}.hint{font-size:13px;color:#52606d}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="card">
+    <div class="meta">Inbox • New message</div>
+    <h1 class="subject">Meeting request</h1>
+    <div class="meta">From: Alex (colleague)</div>
+    <p>Hi! Are you available on <strong>Monday from 09:00 to 10:00</strong>? Please check your calendar and let me know.</p>
+  </section>
+  <section class="card">
+    <h2>Your work calendar</h2>
+    <p class="hint">Each cell represents one hour. Red = busy; green = available.</p>
+    <div class="scroll" id="calendar"></div>
+    <h3>Can you attend the meeting on Monday at 09:00?</h3>
+    <div class="buttons">
+      <button id="yes" type="button">Yes, I'm available</button>
+      <button id="no" type="button" class="secondary">No, I'm busy</button>
+    </div>
+    <div id="status" role="status" aria-live="polite"></div>
+  </section>
+</main>
+<script>
+(function(){
+  'use strict';
+  var p=new URLSearchParams(location.search);
+  var parentOrigin=p.get('parentOrigin')||'';
+  var trial=p.get('trial')||'B1';
+  var eventId=p.get('eventId')||'';
+  var days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var hours=['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
+  var busy=['Monday|11:00','Tuesday|09:00','Wednesday|14:00','Thursday|10:00','Friday|15:00'];
+  var table=document.createElement('table'); table.className='calendar';
+  var head=document.createElement('tr');
+  ['Time'].concat(days).forEach(function(s){var th=document.createElement('th');th.textContent=s;head.appendChild(th);});
+  table.appendChild(head);
+  hours.forEach(function(hour){
+    var tr=document.createElement('tr');var th=document.createElement('th');th.textContent=hour;tr.appendChild(th);
+    days.forEach(function(day){var td=document.createElement('td');var occupied=busy.includes(day+'|'+hour);td.className=occupied?'busy':'free';td.textContent=occupied?'Busy':'Free';tr.appendChild(td);});
+    table.appendChild(tr);
+  });
+  document.getElementById('calendar').appendChild(table);
+  function submit(answer){
+    if(!parentOrigin || !/^https:\/\//.test(parentOrigin)){
+      document.getElementById('status').textContent='Open this page from the Qualtrics survey to submit your answer.';
+      return;
+    }
+    document.getElementById('yes').disabled=true;
+    document.getElementById('no').disabled=true;
+    document.getElementById('status').textContent='Answer submitted. Returning to your task…';
+    window.parent.postMessage({type:'DIGIWORK_INTERRUPT_ANSWER',trial:trial,eventId:eventId,answer:answer},parentOrigin);
+  }
+  document.getElementById('yes').addEventListener('click',function(){submit('Yes');});
+  document.getElementById('no').addEventListener('click',function(){submit('No');});
+})();
+</script>
+</body>
+</html>
